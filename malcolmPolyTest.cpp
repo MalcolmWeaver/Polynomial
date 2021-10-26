@@ -23,16 +23,11 @@ int main(){
 	p2.trim();
 	
 	std::cout << "RUNNING ..... \n";
-	/*printP(p1);
 	p1.assign_coef(2, 2);
-	printP(p1);
 	p1.assign_coef(-4, 0);
-	printP(p1);
 	p1.add_to_coef(10, 2);
-	printP(p1);
 	p1.add_to_coef(1, 1);
-	printP(p1);
-	p2 = p1.antiderivative();
+	/*p2 = p1.antiderivative();
 	printP(p2);
 	p3 = p2.derivative();
 
