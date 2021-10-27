@@ -5,6 +5,7 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
+#include <climits>
 
 #define MINV 0.000001 // if two doubles subtract to less than this value, they are considered equal
 
@@ -48,13 +49,17 @@ namespace coen79_lab5{
 	    }
 
 	void polynomial::trim(){
+		if(size == 1){
+			std::cout << "Will not attempt to trim a constant polynomial (degree 0) any further.\n";
+			return;
+		}
 		if(std::abs(poly[size-1] - 0) > MINV){
 			return; // if the last element is not zero, you can't delete it
 		}
-		for(int idx=size-1; idx >= 0; --idx){
+		for(int idx=size-1; idx >= 1; --idx){
 		    	if(std::abs(poly[idx] - 0) > MINV){
-		        	size = idx;
 		        	double* newPoly = new double[idx];
+		        	size = idx;
 		        	std::copy(poly, poly+idx, newPoly);
 		        	delete [] poly;
 		        	poly = newPoly;
@@ -105,7 +110,6 @@ namespace coen79_lab5{
     	polynomial& polynomial::operator=(double c){
 		size = 1;
 		poly[0] = c;
-		trim();
 		return *this;					    		
     	}
 
@@ -127,12 +131,12 @@ namespace coen79_lab5{
 		return poly[exponent];
 	}
 	
-	/* do after evaluation function
-	double definite_integral(double x0, double x1) const{
+	// do after evaluation function
+	double polynomial::definite_integral(double x0, double x1) const{
 		polynomial anti_derivative = antiderivative();
-		return anti_deri
+		return anti_derivative(x1) - anti_derivative(x0);
 	}
-	*/
+	
 	void polynomial::update_current_degree(){
 		current_degree = size - 1;
 		while(std::abs(poly[current_degree] - 0) < MINV && current_degree > 0){
@@ -153,19 +157,111 @@ namespace coen79_lab5{
         	return deriv;
 	}
 	
-	double eval(double x) const
+	double polynomial::eval(double x) const{
+		return poly_eval(poly, size, x);
+	}
 	
-    //void polynomial::update_current_degree(){
-    //    current_degree = degree();
-    //}
-        /*
-    void polynomial::assign_coef(double coefficient, unsigned int exponent) {
-        assert(exponent <= MAXIMUM_DEGREE);
-        i
-        poly[exponent] = coefficient;
-        if(exponent > current_degree) 
-            current_degree = exponent;
-    }
-        */
+	double poly_eval(double* coefficients, int size, double x){
+		if(size == 1){return coefficients[0];}
+		else{
+			return coefficients[0] + x*poly_eval(coefficients+1, size - 1, x);
+		}
+	}
+	
+	bool polynomial::is_zero( ) const{
+		if(degree() == 0){
+			if(std::abs(poly[0]) < MINV){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	unsigned int polynomial::next_term(unsigned int e) const{
+		for(unsigned int idx=e+1; idx < size; ++idx){
+			if(std::abs(poly[e] - 0) >= MINV){
+				return idx;
+			}
+		}
+		return 0;
+	}
+	
+	unsigned int polynomial::previous_term(unsigned int e) const{
+		for(int idx=e-1; idx <= 0; --idx){
+			if(std::abs(poly[e] - 0) >= MINV){
+				return idx;
+			}
+		}
+		return UINT_MAX;
+	}
+	
+	// stop it when the size runs out for the smaller p
+    	polynomial operator +(const polynomial& p1, const polynomial& p2){
+    		//unsigned int big_degree = p1.degree() > p2.degree() ? p1.degree() : p2.degree(), small_degree = p1.degree() < p2.degree() ? p1.degree() : p2.degree();
+        	int idx;
+        	double tmp_val;
+        	if(p1.degree() >= p2.degree()){
+        	     	polynomial sum(p1);
+        	 	for(idx=0; idx <= p2.degree(); ++idx){
+        	 		tmp_val = p2.coefficient(idx);
+        	 		sum.add_to_coef(tmp_val, idx);
+        	 	}
+        	 	return sum;
+        	}
+        	else{
+        		polynomial sum(p2);
+        	 	for(idx=0; idx <= p1.degree(); ++idx){
+        	 		tmp_val = p1.coefficient(idx);
+        	 		sum.add_to_coef(tmp_val, idx);
+        	 	}
+        	 	return sum;
+              	}
+        }
+
+	/*polynomial operator -(const polynomial& p1, const polynomial& p2){
+        	polynomial diff(1, (p1.degree() > p2.degree() ? p1.degree() : p2.degree()));
+        	for(int i = 0; i <= diff.degree(); ++i){
+            		diff.assign_coef(p1.coefficient(i) - p2.coefficient(i), i);
+        	}
+        	return diff;
+    	}
+    	
+    	polynomial operator *(const polynomial& p1, const polynomial& p2){
+        	assert(p1.degree( ) + p2.degree( ) <= polynomial::MAXIMUM_DEGREE);
+        	polynomial product(0, p1.degree( ) + p2.degree( ));
+        	for(int i = 0; i <= p1.degree(); ++i){
+            		for(int j = 0; j <= p2.degree(); ++j){
+                		product.add_to_coef(p1.coefficient(i) * p2.coefficient(j), i + j);
+            		}
+        	}
+        	return product;
+    	}
+	*/
+	// NON-MEMBER OUTPUT FUNCTIONS
+    	std::ostream& operator << (std::ostream& out, const polynomial& p){
+    		//out << std::fixed;
+        	//out << std::setprecision(1);
+
+        	out << p.coefficient(p.degree());
+        	//special cases for polynomials of degree 1 and 0
+        	if(p.degree() > 1){
+            		out << "x^" << p.degree();
+        	} else if(p.degree() == 1){
+            		out << "x" << " " << (p.coefficient(0) < 0 ? "- " : "+ ") << abs(p.coefficient(0));
+            		return out;
+        	} else return out;
+
+        	for(int i = p.degree() - 1; i > 1; --i){
+            		if(p.coefficient(i) != 0){
+                		out << " " << (p.coefficient(i) < 0 ? "- " : "+ ") << abs(p.coefficient(i)) << "x^" << i;
+            		}
+        	}
+        	if(p.coefficient(1) != 0)
+            		out << " " << (p.coefficient(1) < 0 ? "- " : "+ ") << abs(p.coefficient(1)) << "x";
+        	if(p.coefficient(0) != 0)
+            		out << " " << (p.coefficient(0) < 0 ? "- " : "+ ") << abs(p.coefficient(0));
+            	out << std::endl;
+        	return out;
+    	}
 }
 

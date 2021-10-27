@@ -201,6 +201,9 @@ namespace coen79_lab5
         unsigned int size;  //current size of the dynamic array
         unsigned int current_degree;
     };
+    
+    // MY HELPER FUNCTIONS
+    double poly_eval(double* coefficients, int size, double x);
 
     // NON-MEMBER BINARY OPERATORS
     polynomial operator +(const polynomial& p1, const polynomial& p2);
