@@ -110,6 +110,7 @@ namespace coen79_lab5{
     	polynomial& polynomial::operator=(double c){
 		size = 1;
 		poly[0] = c;
+		update_current_degree();
 		return *this;					    		
     	}
 
@@ -145,15 +146,16 @@ namespace coen79_lab5{
 		
 	}
 	
-	polynomial polynomial::derivative( ) const{
+	polynomial polynomial::derivative( ) const{ // does this for reassignment?
 		if(current_degree == 0){
 			polynomial deriv(0, 0);
 			return deriv;
 		}
-		polynomial deriv(1, current_degree-1); // put garbage into the current_degree -1 position, so that the size is initialized correctly
-        	for(int i = 0; i <= deriv.current_degree; ++i){
+		polynomial deriv(0, current_degree-1); // put garbage into the current_degree -1 position, so that the size is initialized correctly
+        	for(int i = 0; i <= current_degree-1; ++i){
             		deriv.poly[i] = (i + 1) * poly[i + 1];
         	}
+        	deriv.update_current_degree();
         	return deriv;
 	}
 	
@@ -179,7 +181,7 @@ namespace coen79_lab5{
 	
 	unsigned int polynomial::next_term(unsigned int e) const{
 		for(unsigned int idx=e+1; idx < size; ++idx){
-			if(std::abs(poly[e] - 0) >= MINV){
+			if(std::abs(poly[idx] - 0) >= MINV){
 				return idx;
 			}
 		}
@@ -187,8 +189,8 @@ namespace coen79_lab5{
 	}
 	
 	unsigned int polynomial::previous_term(unsigned int e) const{
-		for(int idx=e-1; idx <= 0; --idx){
-			if(std::abs(poly[e] - 0) >= MINV){
+		for(int idx=e-1; idx >= 0; --idx){
+			if(std::abs(poly[idx] - 0) >= MINV){
 				return idx;
 			}
 		}
@@ -206,6 +208,7 @@ namespace coen79_lab5{
         	 		tmp_val = p2.coefficient(idx);
         	 		sum.add_to_coef(tmp_val, idx);
         	 	}
+        	 	sum.update_current_degree();
         	 	return sum;
         	}
         	else{
@@ -214,18 +217,16 @@ namespace coen79_lab5{
         	 		tmp_val = p1.coefficient(idx);
         	 		sum.add_to_coef(tmp_val, idx);
         	 	}
+        	 	sum.update_current_degree();
         	 	return sum;
               	}
         }
 
-	/*polynomial operator -(const polynomial& p1, const polynomial& p2){
-        	polynomial diff(1, (p1.degree() > p2.degree() ? p1.degree() : p2.degree()));
-        	for(int i = 0; i <= diff.degree(); ++i){
-            		diff.assign_coef(p1.coefficient(i) - p2.coefficient(i), i);
-        	}
-        	return diff;
+	polynomial operator -(const polynomial& p1, const polynomial& p2){
+        	polynomial diff, neg_1 = -1;
+        	return p1 + (neg_1 * p2);
     	}
-    	
+
     	polynomial operator *(const polynomial& p1, const polynomial& p2){
         	assert(p1.degree( ) + p2.degree( ) <= polynomial::MAXIMUM_DEGREE);
         	polynomial product(0, p1.degree( ) + p2.degree( ));
@@ -234,9 +235,10 @@ namespace coen79_lab5{
                 		product.add_to_coef(p1.coefficient(i) * p2.coefficient(j), i + j);
             		}
         	}
+        	product.update_current_degree();
         	return product;
     	}
-	*/
+	
 	// NON-MEMBER OUTPUT FUNCTIONS
     	std::ostream& operator << (std::ostream& out, const polynomial& p){
     		//out << std::fixed;
@@ -248,9 +250,12 @@ namespace coen79_lab5{
             		out << "x^" << p.degree();
         	} else if(p.degree() == 1){
             		out << "x" << " " << (p.coefficient(0) < 0 ? "- " : "+ ") << abs(p.coefficient(0));
-            		return out;
-        	} else return out;
-
+			out << std::endl;
+        	} else{
+        		out << std::endl;	
+        		return out;
+        	}
+		
         	for(int i = p.degree() - 1; i > 1; --i){
             		if(p.coefficient(i) != 0){
                 		out << " " << (p.coefficient(i) < 0 ? "- " : "+ ") << abs(p.coefficient(i)) << "x^" << i;
